@@ -71,25 +71,61 @@ class StatsRepository(BaseRepository):
             is_correct: Whether answer was correct
             timestamp: Current timestamp
         """
-        # Build update expression
-        update_expression = f"""
-            ADD total_questions_answered :inc,
-                accuracy_by_category.#cat.total :inc,
-                accuracy_by_category.#cat.correct :correct_inc
-            SET accuracy_by_category.#cat.last_answered = :timestamp,
-                last_updated = :timestamp
-        """
+        from decimal import Decimal
+        from botocore.exceptions import ClientError
 
-        self.update_item(
-            key={'user_id': user_id},
-            update_expression=update_expression,
-            expression_attribute_names={'#cat': category},
-            expression_attribute_values={
-                ':inc': 1,
-                ':correct_inc': 1 if is_correct else 0,
-                ':timestamp': timestamp
-            }
-        )
+        try:
+            # Try to increment (assumes category exists)
+            update_expression = """
+                ADD total_questions_answered :inc
+                SET accuracy_by_category.#cat.#total = accuracy_by_category.#cat.#total + :inc,
+                    accuracy_by_category.#cat.#correct = accuracy_by_category.#cat.#correct + :correct_inc,
+                    accuracy_by_category.#cat.last_answered = :timestamp,
+                    last_updated = :timestamp
+            """
+
+            self.update_item(
+                key={'user_id': user_id},
+                update_expression=update_expression,
+                expression_attribute_names={
+                    '#cat': category,
+                    '#total': 'total',
+                    '#correct': 'correct'
+                },
+                expression_attribute_values={
+                    ':inc': 1,
+                    ':correct_inc': 1 if is_correct else 0,
+                    ':timestamp': timestamp
+                }
+            )
+        except Exception as e:
+            if 'invalid for update' in str(e).lower() or 'document path' in str(e).lower():
+                # Category doesn't exist, create it with initial values
+                update_expression = """
+                    ADD total_questions_answered :inc
+                    SET accuracy_by_category.#cat = :new_category,
+                        last_updated = :timestamp
+                """
+
+                self.update_item(
+                    key={'user_id': user_id},
+                    update_expression=update_expression,
+                    expression_attribute_names={
+                        '#cat': category
+                    },
+                    expression_attribute_values={
+                        ':inc': 1,
+                        ':new_category': {
+                            'total': 1,
+                            'correct': 1 if is_correct else 0,
+                            'accuracy': Decimal('0'),
+                            'last_answered': timestamp
+                        },
+                        ':timestamp': timestamp
+                    }
+                )
+            else:
+                raise
 
     def increment_topic_stats(
         self,
@@ -107,23 +143,59 @@ class StatsRepository(BaseRepository):
             is_correct: Whether answer was correct
             timestamp: Current timestamp
         """
-        update_expression = f"""
-            ADD accuracy_by_topic.#topic.total :inc,
-                accuracy_by_topic.#topic.correct :correct_inc
-            SET accuracy_by_topic.#topic.last_answered = :timestamp,
-                last_updated = :timestamp
-        """
+        from decimal import Decimal
+        from botocore.exceptions import ClientError
 
-        self.update_item(
-            key={'user_id': user_id},
-            update_expression=update_expression,
-            expression_attribute_names={'#topic': topic_id},
-            expression_attribute_values={
-                ':inc': 1,
-                ':correct_inc': 1 if is_correct else 0,
-                ':timestamp': timestamp
-            }
-        )
+        try:
+            # Try to increment (assumes topic exists)
+            update_expression = """
+                SET accuracy_by_topic.#topic.#total = accuracy_by_topic.#topic.#total + :inc,
+                    accuracy_by_topic.#topic.#correct = accuracy_by_topic.#topic.#correct + :correct_inc,
+                    accuracy_by_topic.#topic.last_answered = :timestamp,
+                    last_updated = :timestamp
+            """
+
+            self.update_item(
+                key={'user_id': user_id},
+                update_expression=update_expression,
+                expression_attribute_names={
+                    '#topic': topic_id,
+                    '#total': 'total',
+                    '#correct': 'correct'
+                },
+                expression_attribute_values={
+                    ':inc': 1,
+                    ':correct_inc': 1 if is_correct else 0,
+                    ':timestamp': timestamp
+                }
+            )
+        except Exception as e:
+            if 'invalid for update' in str(e).lower() or 'document path' in str(e).lower():
+                # Topic doesn't exist, create it with initial values
+                update_expression = """
+                    SET accuracy_by_topic.#topic = :new_topic,
+                        last_updated = :timestamp
+                """
+
+                self.update_item(
+                    key={'user_id': user_id},
+                    update_expression=update_expression,
+                    expression_attribute_names={
+                        '#topic': topic_id
+                    },
+                    expression_attribute_values={
+                        ':new_topic': {
+                            'total': 1,
+                            'correct': 1 if is_correct else 0,
+                            'accuracy': Decimal('0'),
+                            'recent_accuracy': Decimal('0'),
+                            'last_answered': timestamp
+                        },
+                        ':timestamp': timestamp
+                    }
+                )
+            else:
+                raise
 
     def update_streak(
         self,

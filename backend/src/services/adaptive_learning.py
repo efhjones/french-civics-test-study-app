@@ -9,7 +9,7 @@ This module implements the core adaptive learning logic:
 """
 
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional, Tuple
 from models.question import Question
 from models.result import UserQuestionResult
@@ -91,7 +91,7 @@ class AdaptiveLearningService:
         topic_performance: Dict[str, TopicPerformance] = {}
 
         # Calculate cutoff for "recent" (last 7 days)
-        cutoff_date = datetime.utcnow() - timedelta(days=self.recent_days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=self.recent_days)
 
         # Process all results
         for result in results:

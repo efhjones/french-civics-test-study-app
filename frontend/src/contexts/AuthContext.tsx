@@ -31,11 +31,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   console.log({ user });
   const loadUser = async () => {
     try {
-      debugger;
       // Check if user is authenticated with Cognito
       await getCurrentUser();
 
-      debugger;
       // Fetch user profile from our API (creates profile if doesn't exist)
       const { user: profile } = await apiService.getUserProfile();
       setUser(profile);
@@ -48,18 +46,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    debugger;
     if (!user) {
-      debugger;
       loadUser();
     }
   }, [user, isLoading]);
 
   const signOut = async () => {
     try {
-      debugger;
       await amplifySignOut();
-      debugger;
       setUser(null);
     } catch (error) {
       console.error("Error signing out:", error);

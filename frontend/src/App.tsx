@@ -14,10 +14,9 @@ import "./styles/App.css";
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
-    debugger;
     return <div className="loading-screen">Chargement...</div>;
   }
 
@@ -26,7 +25,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
       <h2>Connexion requise</h2>
       <p>Veuillez vous connecter pour accéder à cette page</p>
       <Authenticator>
-        {({ signOut, user }) => {
+        {() => {
           return <>{children}</>;
         }}
       </Authenticator>

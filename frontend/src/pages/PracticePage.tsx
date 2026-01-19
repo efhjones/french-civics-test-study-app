@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { apiService } from '../services/api';
-import type { Question, AnswerResponse } from '../types';
+import React, { useState, useEffect } from "react";
+import { apiService } from "../services/api";
+import type { Question, AnswerResponse } from "../types";
 
 export const PracticePage: React.FC = () => {
   const [question, setQuestion] = useState<Question | null>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState<string>('');
+  const [selectedAnswer, setSelectedAnswer] = useState<string>("");
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<AnswerResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -15,13 +15,12 @@ export const PracticePage: React.FC = () => {
     try {
       const { question: nextQuestion } = await apiService.getNextQuestion();
       setQuestion(nextQuestion);
-      setSelectedAnswer('');
+      setSelectedAnswer("");
       setSubmitted(false);
       setResult(null);
       setStartTime(Date.now());
     } catch (error) {
-      console.error('Error loading question:', error);
-      alert('Erreur lors du chargement de la question');
+      console.error("Error loading question:", error);
     } finally {
       setLoading(false);
     }
@@ -47,8 +46,7 @@ export const PracticePage: React.FC = () => {
       setResult(response);
       setSubmitted(true);
     } catch (error) {
-      console.error('Error submitting answer:', error);
-      alert('Erreur lors de la soumission de la réponse');
+      console.error("Error submitting answer:", error);
     } finally {
       setLoading(false);
     }
@@ -76,7 +74,12 @@ export const PracticePage: React.FC = () => {
         <div className="question-header">
           <div className="category-badge">{question.category}</div>
           <div className="difficulty-badge">
-            Difficulté: {question.difficulty === 1 ? 'Facile' : question.difficulty === 2 ? 'Moyen' : 'Difficile'}
+            Difficulté:{" "}
+            {question.difficulty === 1
+              ? "Facile"
+              : question.difficulty === 2
+              ? "Moyen"
+              : "Difficile"}
           </div>
         </div>
 
@@ -86,16 +89,18 @@ export const PracticePage: React.FC = () => {
           {question.answer_options?.map((option) => (
             <button
               key={option.id}
-              className={`answer-option ${selectedAnswer === option.id ? 'selected' : ''} ${
+              className={`answer-option ${
+                selectedAnswer === option.id ? "selected" : ""
+              } ${
                 submitted
                   ? result?.correct && selectedAnswer === option.id
-                    ? 'correct'
+                    ? "correct"
                     : !result?.correct && selectedAnswer === option.id
-                    ? 'incorrect'
+                    ? "incorrect"
                     : result?.correct_answer === option.id
-                    ? 'show-correct'
-                    : ''
-                  : ''
+                    ? "show-correct"
+                    : ""
+                  : ""
               }`}
               onClick={() => !submitted && setSelectedAnswer(option.id)}
               disabled={submitted}
@@ -113,13 +118,17 @@ export const PracticePage: React.FC = () => {
               onClick={handleSubmit}
               disabled={!selectedAnswer || loading}
             >
-              {loading ? 'Soumission...' : 'Soumettre la réponse'}
+              {loading ? "Soumission..." : "Soumettre la réponse"}
             </button>
           </div>
         ) : (
           <div className="result-section">
-            <div className={`result-indicator ${result?.correct ? 'correct' : 'incorrect'}`}>
-              {result?.correct ? '✓ Correct!' : '✗ Incorrect'}
+            <div
+              className={`result-indicator ${
+                result?.correct ? "correct" : "incorrect"
+              }`}
+            >
+              {result?.correct ? "✓ Correct!" : "✗ Incorrect"}
             </div>
 
             <div className="explanation">
@@ -130,8 +139,10 @@ export const PracticePage: React.FC = () => {
             <div className="source-reference">
               <h4>Source:</h4>
               <p>
-                {result?.source_reference.document}, page {result?.source_reference.page}
-                {result?.source_reference.section && ` - ${result.source_reference.section}`}
+                {result?.source_reference.document}, page{" "}
+                {result?.source_reference.page}
+                {result?.source_reference.section &&
+                  ` - ${result.source_reference.section}`}
               </p>
             </div>
 

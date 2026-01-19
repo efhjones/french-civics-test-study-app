@@ -4,6 +4,7 @@ User statistics data model.
 
 from dataclasses import dataclass, field
 from typing import Dict
+from decimal import Decimal
 
 
 @dataclass
@@ -132,7 +133,7 @@ class UserStats:
             accuracy_by_category[category] = {
                 'total': stats.total,
                 'correct': stats.correct,
-                'accuracy': stats.accuracy,
+                'accuracy': Decimal(str(stats.accuracy)),
                 'last_answered': stats.last_answered
             }
 
@@ -142,8 +143,8 @@ class UserStats:
             accuracy_by_topic[topic_id] = {
                 'total': stats.total,
                 'correct': stats.correct,
-                'accuracy': stats.accuracy,
-                'recent_accuracy': stats.recent_accuracy,
+                'accuracy': Decimal(str(stats.accuracy)),
+                'recent_accuracy': Decimal(str(stats.recent_accuracy)),
                 'last_answered': stats.last_answered
             }
 
@@ -152,7 +153,7 @@ class UserStats:
             {
                 'topic_id': t.topic_id,
                 'topic_name': t.topic_name,
-                'accuracy': t.accuracy
+                'accuracy': Decimal(str(t.accuracy))
             }
             for t in self.weakest_topics
         ]
@@ -162,7 +163,7 @@ class UserStats:
             {
                 'topic_id': t.topic_id,
                 'topic_name': t.topic_name,
-                'accuracy': t.accuracy
+                'accuracy': Decimal(str(t.accuracy))
             }
             for t in self.strongest_topics
         ]
@@ -171,7 +172,7 @@ class UserStats:
             'user_id': self.user_id,
             'last_updated': self.last_updated,
             'total_questions_answered': self.total_questions_answered,
-            'overall_accuracy': self.overall_accuracy,
+            'overall_accuracy': Decimal(str(self.overall_accuracy)),
             'accuracy_by_category': accuracy_by_category,
             'accuracy_by_topic': accuracy_by_topic,
             'weakest_topics': weakest_topics,
