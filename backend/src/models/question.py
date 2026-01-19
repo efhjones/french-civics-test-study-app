@@ -61,7 +61,7 @@ class Question:
         source_ref_data = item['source_reference']
         source_ref = QuestionSourceReference(
             document=source_ref_data['document'],
-            page=source_ref_data['page'],
+            page=int(source_ref_data['page']),
             section=source_ref_data['section'],
             text_excerpt=source_ref_data.get('text_excerpt')
         )
@@ -82,7 +82,7 @@ class Question:
             question_type=item['question_type'],
             correct_answer=item['correct_answer'],
             explanation=item['explanation'],
-            difficulty=item['difficulty'],
+            difficulty=int(item['difficulty']),
             source_reference=source_ref,
             generated_by=item['generated_by'],
             validated=item['validated'],

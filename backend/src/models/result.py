@@ -44,8 +44,8 @@ class UserQuestionResult:
             answered_at=item['answered_at'],
             correct=item['correct'],
             user_answer=item['user_answer'],
-            response_time_ms=item['response_time_ms'],
-            difficulty=item['difficulty']
+            response_time_ms=int(item['response_time_ms']),
+            difficulty=int(item['difficulty'])
         )
 
     def to_dynamo(self) -> dict:

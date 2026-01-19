@@ -11,9 +11,9 @@ This module implements the core adaptive learning logic:
 import random
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
-from ..models.question import Question
-from ..models.result import UserQuestionResult
-from ..shared.constants import AdaptiveLearningWeights
+from models.question import Question
+from models.result import UserQuestionResult
+from shared.constants import AdaptiveLearningWeights
 
 
 class TopicPerformance:

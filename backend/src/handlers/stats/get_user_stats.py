@@ -6,8 +6,8 @@ GET /users/me/stats
 
 import json
 from typing import Any, Dict
-from ...repositories.stats_repository import StatsRepository
-from ...utils import (
+from repositories.stats_repository import StatsRepository
+from utils import (
     success_response,
     error_response,
     internal_server_error_response,

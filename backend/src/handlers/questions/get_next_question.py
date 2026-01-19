@@ -9,11 +9,11 @@ Query parameters:
 
 import json
 from typing import Any, Dict
-from ...repositories.question_repository import QuestionRepository
-from ...repositories.result_repository import ResultRepository
-from ...repositories.topic_repository import TopicRepository
-from ...services.adaptive_learning import AdaptiveLearningService
-from ...utils import (
+from repositories.question_repository import QuestionRepository
+from repositories.result_repository import ResultRepository
+from repositories.topic_repository import TopicRepository
+from services.adaptive_learning import AdaptiveLearningService
+from utils import (
     success_response,
     error_response,
     internal_server_error_response,

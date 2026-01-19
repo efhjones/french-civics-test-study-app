@@ -5,11 +5,11 @@ This package contains dataclasses that map to DynamoDB table schemas
 and provide serialization/deserialization methods.
 """
 
-from .user import User
-from .topic import Topic, SourceReference
-from .question import Question, AnswerOption, QuestionSourceReference
-from .result import UserQuestionResult
-from .stats import (
+from models.user import User
+from models.topic import Topic, SourceReference
+from models.question import Question, AnswerOption, QuestionSourceReference
+from models.result import UserQuestionResult
+from models.stats import (
     UserStats,
     CategoryStats,
     TopicStats,

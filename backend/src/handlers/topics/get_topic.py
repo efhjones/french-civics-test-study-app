@@ -6,8 +6,8 @@ GET /topics/{topicId}
 
 import json
 from typing import Any, Dict
-from ...repositories.topic_repository import TopicRepository
-from ...utils import (
+from repositories.topic_repository import TopicRepository
+from utils import (
     success_response,
     error_response,
     not_found_response,

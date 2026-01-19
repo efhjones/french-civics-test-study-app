@@ -68,9 +68,9 @@ class UserStats:
         accuracy_by_category = {}
         for category, stats_data in item.get('accuracy_by_category', {}).items():
             accuracy_by_category[category] = CategoryStats(
-                total=stats_data['total'],
-                correct=stats_data['correct'],
-                accuracy=stats_data['accuracy'],
+                total=int(stats_data['total']),
+                correct=int(stats_data['correct']),
+                accuracy=float(stats_data['accuracy']),
                 last_answered=stats_data['last_answered']
             )
 
@@ -78,10 +78,10 @@ class UserStats:
         accuracy_by_topic = {}
         for topic_id, stats_data in item.get('accuracy_by_topic', {}).items():
             accuracy_by_topic[topic_id] = TopicStats(
-                total=stats_data['total'],
-                correct=stats_data['correct'],
-                accuracy=stats_data['accuracy'],
-                recent_accuracy=stats_data['recent_accuracy'],
+                total=int(stats_data['total']),
+                correct=int(stats_data['correct']),
+                accuracy=float(stats_data['accuracy']),
+                recent_accuracy=float(stats_data['recent_accuracy']),
                 last_answered=stats_data['last_answered']
             )
 
@@ -90,7 +90,7 @@ class UserStats:
             TopicRanking(
                 topic_id=t['topic_id'],
                 topic_name=t['topic_name'],
-                accuracy=t['accuracy']
+                accuracy=float(t['accuracy'])
             )
             for t in item.get('weakest_topics', [])
         ]
@@ -100,7 +100,7 @@ class UserStats:
             TopicRanking(
                 topic_id=t['topic_id'],
                 topic_name=t['topic_name'],
-                accuracy=t['accuracy']
+                accuracy=float(t['accuracy'])
             )
             for t in item.get('strongest_topics', [])
         ]
@@ -108,14 +108,14 @@ class UserStats:
         return cls(
             user_id=item['user_id'],
             last_updated=item['last_updated'],
-            total_questions_answered=item['total_questions_answered'],
-            overall_accuracy=item['overall_accuracy'],
+            total_questions_answered=int(item['total_questions_answered']),
+            overall_accuracy=float(item['overall_accuracy']),
             accuracy_by_category=accuracy_by_category,
             accuracy_by_topic=accuracy_by_topic,
             weakest_topics=weakest_topics,
             strongest_topics=strongest_topics,
-            current_streak_days=item.get('current_streak_days', 0),
-            longest_streak_days=item.get('longest_streak_days', 0),
+            current_streak_days=int(item.get('current_streak_days', 0)),
+            longest_streak_days=int(item.get('longest_streak_days', 0)),
             last_activity_date=item.get('last_activity_date', '')
         )
 

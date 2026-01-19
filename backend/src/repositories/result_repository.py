@@ -6,8 +6,8 @@ import os
 from datetime import datetime, timedelta
 from typing import List, Optional
 from boto3.dynamodb.conditions import Key
-from .base_repository import BaseRepository
-from ..models.result import UserQuestionResult
+from repositories.base_repository import BaseRepository
+from models.result import UserQuestionResult
 
 
 class ResultRepository(BaseRepository):

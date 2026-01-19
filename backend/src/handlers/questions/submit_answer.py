@@ -13,11 +13,11 @@ Request body:
 import json
 from datetime import datetime
 from typing import Any, Dict
-from ...repositories.question_repository import QuestionRepository
-from ...repositories.result_repository import ResultRepository
-from ...repositories.stats_repository import StatsRepository
-from ...models.result import UserQuestionResult
-from ...utils import (
+from repositories.question_repository import QuestionRepository
+from repositories.result_repository import ResultRepository
+from repositories.stats_repository import StatsRepository
+from models.result import UserQuestionResult
+from utils import (
     success_response,
     error_response,
     not_found_response,

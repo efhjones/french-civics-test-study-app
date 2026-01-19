@@ -5,8 +5,8 @@ Repository for UserStats table operations.
 import os
 from datetime import datetime
 from typing import Optional
-from .base_repository import BaseRepository
-from ..models.stats import UserStats
+from repositories.base_repository import BaseRepository
+from models.stats import UserStats
 
 
 class StatsRepository(BaseRepository):

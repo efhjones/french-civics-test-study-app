@@ -5,8 +5,8 @@ Repository for Users table operations.
 import os
 from datetime import datetime
 from typing import Optional
-from .base_repository import BaseRepository
-from ..models.user import User
+from repositories.base_repository import BaseRepository
+from models.user import User
 
 
 class UserRepository(BaseRepository):
