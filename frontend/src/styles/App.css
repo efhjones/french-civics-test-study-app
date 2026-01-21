@@ -623,6 +623,64 @@ body {
   color: var(--text-light);
 }
 
+/* Topic Rankings */
+.topic-rankings-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.topic-ranking h2 {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+}
+
+.topic-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.topic-rank-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--bg-light);
+  border-radius: 8px;
+  border-left: 4px solid transparent;
+}
+
+.topic-rank-item.weak {
+  border-left-color: #ff9800;
+}
+
+.topic-rank-item.strong {
+  border-left-color: #4caf50;
+}
+
+.topic-name {
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.topic-accuracy {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  min-width: 60px;
+  text-align: right;
+}
+
+.mini-progress-fill.weak {
+  background-color: #ff9800;
+}
+
+.mini-progress-fill.strong {
+  background-color: #4caf50;
+}
+
 .auth-required {
   max-width: 500px;
   margin: 0 auto;
@@ -662,6 +720,10 @@ body {
   }
 
   .category-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topic-rankings-section {
     grid-template-columns: 1fr;
   }
 }

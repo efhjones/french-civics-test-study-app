@@ -1,0 +1,60 @@
+{
+  "resources": [
+    {
+      "resource_id": "res-001",
+      "document_name": "Livret du citoyen V2",
+      "filename": "Livret_du_citoyen_V2fev2022_accessible.pdf",
+      "category": "Mixed",
+      "topics": [
+        "hist-001",
+        "hist-002",
+        "hist-003",
+        "pol-001",
+        "pol-002",
+        "pol-003",
+        "pol-004",
+        "geo-001",
+        "geo-002",
+        "geo-003",
+        "cult-001",
+        "cult-002",
+        "cult-003",
+        "cult-004"
+      ],
+      "status": "questions_generated",
+      "date_added": "2026-01-19",
+      "notes": "Original official study guide"
+    },
+    {
+      "resource_id": "res-002",
+      "document_name": "Le drapeau français (Formation civique)",
+      "filename": "Le drapeau français — Formation civique (1_19_2026 11：43：47 PM).html",
+      "category": "French Culture",
+      "topics": [
+        "cult-002"
+      ],
+      "status": "questions_generated",
+      "date_added": "2026-01-20",
+      "questions_count": 5,
+      "model_used": "anthropic.claude-3-sonnet-20240229-v1:0",
+      "notes": "French flag history and symbolism from formation-civique.interieur.gouv.fr"
+    }
+  ],
+  "next_resource_id": 3,
+  "topic_mapping": {
+    "hist-001": "French Revolution",
+    "hist-002": "Fifth Republic",
+    "hist-003": "WWII and Resistance",
+    "pol-001": "French Republic Principles",
+    "pol-002": "Presidential Powers",
+    "pol-003": "Parliament Structure",
+    "pol-004": "Local Government",
+    "geo-001": "French Regions",
+    "geo-002": "Geography Basics",
+    "geo-003": "European Union",
+    "cult-001": "Laïcité",
+    "cult-002": "French Symbols",
+    "cult-003": "Voting Rights",
+    "cult-004": "French Language"
+  }
+}

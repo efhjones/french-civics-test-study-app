@@ -1,59 +1,20 @@
-"""
-Seed the Questions table with initial practice questions.
-
-This script creates sample practice questions across all topics,
-with source references to the Livret du citoyen.
-
-Run this script after seeding topics.
-
-Usage:
-    python scripts/seed_questions.py
-"""
-
+"""Add more questions for testing"""
 import sys
 import os
 import uuid
-
-# Add parent directory to path to import models
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from src.models.question import Question, QuestionSourceReference, AnswerOption
-from src.repositories.question_repository import QuestionRepository
-from src.shared.constants import Category, Difficulty, QuestionType, GeneratedBy
 from datetime import datetime
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
-def create_questions():
-    """Define sample practice questions with source references."""
-    questions = []
+from models.question import Question, QuestionSourceReference, AnswerOption
+from repositories.question_repository import QuestionRepository
+from shared.constants import Category, Difficulty, QuestionType, GeneratedBy
+
+def create_additional_questions():
     timestamp = datetime.utcnow().isoformat() + 'Z'
 
-    # French History Questions
-    questions.extend([
-        Question(
-            question_id=str(uuid.uuid4()),
-            topic_id="hist-001",
-            category=Category.FRENCH_HISTORY,
-            question_text="En quelle année a débuté la Révolution française?",
-            question_type=QuestionType.MULTIPLE_CHOICE,
-            correct_answer="a",
-            explanation="La Révolution française a commencé en 1789 avec la prise de la Bastille le 14 juillet.",
-            difficulty=Difficulty.EASY,
-            source_reference=QuestionSourceReference(
-                document="Livret du citoyen V2",
-                page=8,
-                section="Les grandes dates de l'histoire de France"
-            ),
-            generated_by=GeneratedBy.MANUAL,
-            validated=True,
-            created_at=timestamp,
-            answer_options=[
-                AnswerOption(id="a", text="1789"),
-                AnswerOption(id="b", text="1792"),
-                AnswerOption(id="c", text="1799"),
-                AnswerOption(id="d", text="1804"),
-            ]
-        ),
+    questions = [
+        # More French History
         Question(
             question_id=str(uuid.uuid4()),
             topic_id="hist-002",
@@ -102,34 +63,7 @@ def create_questions():
                 AnswerOption(id="d", text="François Mitterrand"),
             ]
         ),
-    ])
-
-    # Politics Questions
-    questions.extend([
-        Question(
-            question_id=str(uuid.uuid4()),
-            topic_id="pol-001",
-            category=Category.FRENCH_POLITICS,
-            question_text="Quelle est la devise de la République française?",
-            question_type=QuestionType.MULTIPLE_CHOICE,
-            correct_answer="b",
-            explanation="La devise de la République française est 'Liberté, Égalité, Fraternité', inscrite dans la Constitution.",
-            difficulty=Difficulty.EASY,
-            source_reference=QuestionSourceReference(
-                document="Livret du citoyen V2",
-                page=15,
-                section="Les principes de la République"
-            ),
-            generated_by=GeneratedBy.MANUAL,
-            validated=True,
-            created_at=timestamp,
-            answer_options=[
-                AnswerOption(id="a", text="Honneur et Patrie"),
-                AnswerOption(id="b", text="Liberté, Égalité, Fraternité"),
-                AnswerOption(id="c", text="Un pour tous, tous pour un"),
-                AnswerOption(id="d", text="Travail, Famille, Patrie"),
-            ]
-        ),
+        # More French Politics
         Question(
             question_id=str(uuid.uuid4()),
             topic_id="pol-002",
@@ -202,10 +136,7 @@ def create_questions():
                 AnswerOption(id="d", text="Le président du conseil général"),
             ]
         ),
-    ])
-
-    # Geography Questions
-    questions.extend([
+        # More Geography
         Question(
             question_id=str(uuid.uuid4()),
             topic_id="geo-001",
@@ -232,30 +163,6 @@ def create_questions():
         ),
         Question(
             question_id=str(uuid.uuid4()),
-            topic_id="geo-002",
-            category=Category.FRENCH_GEOGRAPHY,
-            question_text="Quelle est la capitale de la France?",
-            question_type=QuestionType.MULTIPLE_CHOICE,
-            correct_answer="c",
-            explanation="Paris est la capitale de la France et sa plus grande ville.",
-            difficulty=Difficulty.EASY,
-            source_reference=QuestionSourceReference(
-                document="Livret du citoyen V2",
-                page=32,
-                section="Les grandes villes"
-            ),
-            generated_by=GeneratedBy.MANUAL,
-            validated=True,
-            created_at=timestamp,
-            answer_options=[
-                AnswerOption(id="a", text="Lyon"),
-                AnswerOption(id="b", text="Marseille"),
-                AnswerOption(id="c", text="Paris"),
-                AnswerOption(id="d", text="Bordeaux"),
-            ]
-        ),
-        Question(
-            question_id=str(uuid.uuid4()),
             topic_id="geo-003",
             category=Category.FRENCH_GEOGRAPHY,
             question_text="La France est-elle membre de l'Union européenne?",
@@ -278,10 +185,7 @@ def create_questions():
                 AnswerOption(id="d", text="Non, elle a quitté l'UE"),
             ]
         ),
-    ])
-
-    # Culture Questions
-    questions.extend([
+        # More Culture
         Question(
             question_id=str(uuid.uuid4()),
             topic_id="cult-001",
@@ -378,64 +282,17 @@ def create_questions():
                 AnswerOption(id="d", text="Il n'y a pas de langue officielle"),
             ]
         ),
-    ])
+    ]
 
     return questions
 
+if __name__ == "__main__":
+    print("=== Adding More Questions ===\n")
 
-def seed_questions():
-    """Seed the questions into DynamoDB."""
-    print("=== French Civics Test - Question Seeding ===\n")
-
-    # Initialize repository
     repo = QuestionRepository()
+    questions = create_additional_questions()
 
-    # Create questions
-    questions = create_questions()
-
-    print(f"Preparing to seed {len(questions)} questions...\n")
-
-    # Group by topic for display
-    topics_count = {}
-    for q in questions:
-        topics_count[q.topic_id] = topics_count.get(q.topic_id, 0) + 1
-
-    print("📊 Questions by topic:")
-    for topic_id, count in sorted(topics_count.items()):
-        print(f"   - {topic_id}: {count} questions")
-
-    # Difficulty breakdown
-    difficulty_count = {}
-    for q in questions:
-        difficulty_count[q.difficulty] = difficulty_count.get(q.difficulty, 0) + 1
-
-    print("\n📊 Questions by difficulty:")
-    for difficulty, count in sorted(difficulty_count.items(), key=lambda x: x[0].value):
-        print(f"   - {difficulty.name}: {count} questions")
-
-    # Confirm before proceeding
-    response = input("\n\nProceed with seeding? (yes/no): ")
-    if response.lower() not in ['yes', 'y']:
-        print("❌ Seeding cancelled.")
-        return
-
-    # Batch create questions
-    print("\n🚀 Seeding questions...")
+    print(f"Creating {len(questions)} additional questions...")
     repo.batch_create(questions)
 
-    print(f"\n✅ Successfully seeded {len(questions)} questions!")
-    print("\n✨ Question seeding complete!")
-    print("\n💡 You can now test the API endpoints with authenticated requests.")
-
-
-if __name__ == "__main__":
-    try:
-        seed_questions()
-    except KeyboardInterrupt:
-        print("\n\n❌ Seeding interrupted by user.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n\n❌ Error during seeding: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+    print(f"\n✅ Successfully added {len(questions)} more questions!")

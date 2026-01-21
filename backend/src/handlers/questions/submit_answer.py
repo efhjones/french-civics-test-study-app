@@ -11,7 +11,7 @@ Request body:
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict
 from repositories.question_repository import QuestionRepository
 from repositories.result_repository import ResultRepository
@@ -72,8 +72,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # Check if answer is correct
         is_correct = (user_answer == question.correct_answer)
 
-        # Create timestamp
-        timestamp = datetime.utcnow().isoformat() + 'Z'
+        # Create timestamp (replace +00:00 with Z for consistency)
+        timestamp = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
 
         # Create result record
         result = UserQuestionResult(

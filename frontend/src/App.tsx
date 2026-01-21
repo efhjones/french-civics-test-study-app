@@ -9,6 +9,7 @@ import { PracticePage } from "./pages/PracticePage";
 import { TopicsPage } from "./pages/TopicsPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import "./styles/App.css";
+import { ErrorBoundary } from "react-error-boundary";
 
 // Protected route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
@@ -20,17 +21,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
     return <div className="loading-screen">Chargement...</div>;
   }
 
-  return (
-    <div className="auth-required">
-      <h2>Connexion requise</h2>
-      <p>Veuillez vous connecter pour accéder à cette page</p>
-      <Authenticator>
-        {() => {
-          return <>{children}</>;
-        }}
-      </Authenticator>
-    </div>
-  );
+  return <Authenticator>{children}</Authenticator>;
 };
 
 function AppContent() {
@@ -53,7 +44,9 @@ function AppContent() {
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <DashboardPage />
+                  <ErrorBoundary fallback={<p>⚠️Something went wrong</p>}>
+                    <DashboardPage />
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />

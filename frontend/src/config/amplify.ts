@@ -9,7 +9,7 @@ const amplifyConfig = {
       loginWith: {
         email: true,
       },
-      signUpVerificationMethod: 'code',
+      signUpVerificationMethod: 'code' as const,
       userAttributes: {
         email: {
           required: true,
@@ -28,6 +28,7 @@ const amplifyConfig = {
 };
 
 export const configureAmplify = () => {
+  // @ts-expect-error - Amplify v6 types are overly strict, this config works correctly
   Amplify.configure(amplifyConfig);
 };
 

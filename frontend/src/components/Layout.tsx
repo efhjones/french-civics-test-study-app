@@ -1,6 +1,7 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { ErrorBoundary } from "react-error-boundary";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,7 +13,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -43,9 +44,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
         </div>
       </nav>
-      <main className="main-content">{children}</main>
+      <ErrorBoundary fallback={<p>⚠️ Something went wrong</p>}>
+        <main className="main-content">{children}</main>
+      </ErrorBoundary>
       <footer className="footer">
-        <p>© 2026 French Civics Test - Basé sur le Livret du citoyen officiel</p>
+        <p>
+          © 2026 French Civics Test - Basé sur le Livret du citoyen officiel
+        </p>
       </footer>
     </div>
   );

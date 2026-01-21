@@ -60,9 +60,17 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # Get all user results for performance analysis
         logger.info(f"Fetching all results for user {user_id}")
         all_results = result_repo.get_user_history(user_id, limit=1000)
+        logger.info(f"Retrieved {len(all_results)} total results for user {user_id}")
+
+        # Log the first few results for debugging
+        if all_results:
+            logger.info(f"Sample results: {[(r.question_id, r.answered_at) for r in all_results[:3]]}")
+        else:
+            logger.warning(f"No results found for user {user_id} - user may be new")
 
         # Get recent results (last 7 days) for filtering out recently answered questions
         recent_results = result_repo.get_recent_results(user_id, days=7)
+        logger.info(f"Retrieved {len(recent_results)} recent results")
 
         # Get all available questions
         logger.info("Fetching all available questions")

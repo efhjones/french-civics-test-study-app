@@ -78,9 +78,9 @@ class StatsRepository(BaseRepository):
             # Try to increment (assumes category exists)
             update_expression = """
                 ADD total_questions_answered :inc
-                SET accuracy_by_category.#cat.#total = accuracy_by_category.#cat.#total + :inc,
-                    accuracy_by_category.#cat.#correct = accuracy_by_category.#cat.#correct + :correct_inc,
-                    accuracy_by_category.#cat.last_answered = :timestamp,
+                SET stats_by_category.#cat.#total = stats_by_category.#cat.#total + :inc,
+                    stats_by_category.#cat.#correct = stats_by_category.#cat.#correct + :correct_inc,
+                    stats_by_category.#cat.last_answered = :timestamp,
                     last_updated = :timestamp
             """
 
@@ -103,7 +103,7 @@ class StatsRepository(BaseRepository):
                 # Category doesn't exist, create it with initial values
                 update_expression = """
                     ADD total_questions_answered :inc
-                    SET accuracy_by_category.#cat = :new_category,
+                    SET stats_by_category.#cat = :new_category,
                         last_updated = :timestamp
                 """
 
@@ -118,7 +118,6 @@ class StatsRepository(BaseRepository):
                         ':new_category': {
                             'total': 1,
                             'correct': 1 if is_correct else 0,
-                            'accuracy': Decimal('0'),
                             'last_answered': timestamp
                         },
                         ':timestamp': timestamp
@@ -149,9 +148,9 @@ class StatsRepository(BaseRepository):
         try:
             # Try to increment (assumes topic exists)
             update_expression = """
-                SET accuracy_by_topic.#topic.#total = accuracy_by_topic.#topic.#total + :inc,
-                    accuracy_by_topic.#topic.#correct = accuracy_by_topic.#topic.#correct + :correct_inc,
-                    accuracy_by_topic.#topic.last_answered = :timestamp,
+                SET stats_by_topic.#topic.#total = stats_by_topic.#topic.#total + :inc,
+                    stats_by_topic.#topic.#correct = stats_by_topic.#topic.#correct + :correct_inc,
+                    stats_by_topic.#topic.last_answered = :timestamp,
                     last_updated = :timestamp
             """
 
@@ -173,7 +172,7 @@ class StatsRepository(BaseRepository):
             if 'invalid for update' in str(e).lower() or 'document path' in str(e).lower():
                 # Topic doesn't exist, create it with initial values
                 update_expression = """
-                    SET accuracy_by_topic.#topic = :new_topic,
+                    SET stats_by_topic.#topic = :new_topic,
                         last_updated = :timestamp
                 """
 
@@ -187,7 +186,6 @@ class StatsRepository(BaseRepository):
                         ':new_topic': {
                             'total': 1,
                             'correct': 1 if is_correct else 0,
-                            'accuracy': Decimal('0'),
                             'recent_accuracy': Decimal('0'),
                             'last_answered': timestamp
                         },

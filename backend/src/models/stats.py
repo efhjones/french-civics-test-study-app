@@ -2,7 +2,7 @@
 User statistics data model.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict
 from decimal import Decimal
 
@@ -12,8 +12,12 @@ class CategoryStats:
     """Statistics for a single category."""
     total: int
     correct: int
-    accuracy: float
     last_answered: str
+
+    @property
+    def accuracy(self) -> float:
+        """Calculate accuracy percentage from correct/total."""
+        return (self.correct / self.total * 100) if self.total > 0 else 0.0
 
 
 @dataclass
@@ -21,9 +25,13 @@ class TopicStats:
     """Statistics for a single topic."""
     total: int
     correct: int
-    accuracy: float
     recent_accuracy: float
     last_answered: str
+
+    @property
+    def accuracy(self) -> float:
+        """Calculate accuracy percentage from correct/total."""
+        return (self.correct / self.total * 100) if self.total > 0 else 0.0
 
 
 @dataclass
@@ -46,8 +54,8 @@ class UserStats:
     last_updated: str
     total_questions_answered: int
     overall_accuracy: float
-    accuracy_by_category: Dict[str, CategoryStats]
-    accuracy_by_topic: Dict[str, TopicStats]
+    stats_by_category: Dict[str, CategoryStats]
+    stats_by_topic: Dict[str, TopicStats]
     weakest_topics: list[TopicRanking]
     strongest_topics: list[TopicRanking]
     current_streak_days: int
@@ -66,22 +74,20 @@ class UserStats:
             UserStats instance
         """
         # Parse category stats
-        accuracy_by_category = {}
-        for category, stats_data in item.get('accuracy_by_category', {}).items():
-            accuracy_by_category[category] = CategoryStats(
+        stats_by_category = {}
+        for category, stats_data in item.get('stats_by_category', {}).items():
+            stats_by_category[category] = CategoryStats(
                 total=int(stats_data['total']),
                 correct=int(stats_data['correct']),
-                accuracy=float(stats_data['accuracy']),
                 last_answered=stats_data['last_answered']
             )
 
         # Parse topic stats
-        accuracy_by_topic = {}
-        for topic_id, stats_data in item.get('accuracy_by_topic', {}).items():
-            accuracy_by_topic[topic_id] = TopicStats(
+        stats_by_topic = {}
+        for topic_id, stats_data in item.get('stats_by_topic', {}).items():
+            stats_by_topic[topic_id] = TopicStats(
                 total=int(stats_data['total']),
                 correct=int(stats_data['correct']),
-                accuracy=float(stats_data['accuracy']),
                 recent_accuracy=float(stats_data['recent_accuracy']),
                 last_answered=stats_data['last_answered']
             )
@@ -111,8 +117,8 @@ class UserStats:
             last_updated=item['last_updated'],
             total_questions_answered=int(item['total_questions_answered']),
             overall_accuracy=float(item['overall_accuracy']),
-            accuracy_by_category=accuracy_by_category,
-            accuracy_by_topic=accuracy_by_topic,
+            stats_by_category=stats_by_category,
+            stats_by_topic=stats_by_topic,
             weakest_topics=weakest_topics,
             strongest_topics=strongest_topics,
             current_streak_days=int(item.get('current_streak_days', 0)),
@@ -128,22 +134,20 @@ class UserStats:
             Dict suitable for DynamoDB PutItem
         """
         # Convert category stats
-        accuracy_by_category = {}
-        for category, stats in self.accuracy_by_category.items():
-            accuracy_by_category[category] = {
+        stats_by_category = {}
+        for category, stats in self.stats_by_category.items():
+            stats_by_category[category] = {
                 'total': stats.total,
                 'correct': stats.correct,
-                'accuracy': Decimal(str(stats.accuracy)),
                 'last_answered': stats.last_answered
             }
 
         # Convert topic stats
-        accuracy_by_topic = {}
-        for topic_id, stats in self.accuracy_by_topic.items():
-            accuracy_by_topic[topic_id] = {
+        stats_by_topic = {}
+        for topic_id, stats in self.stats_by_topic.items():
+            stats_by_topic[topic_id] = {
                 'total': stats.total,
                 'correct': stats.correct,
-                'accuracy': Decimal(str(stats.accuracy)),
                 'recent_accuracy': Decimal(str(stats.recent_accuracy)),
                 'last_answered': stats.last_answered
             }
@@ -173,8 +177,8 @@ class UserStats:
             'last_updated': self.last_updated,
             'total_questions_answered': self.total_questions_answered,
             'overall_accuracy': Decimal(str(self.overall_accuracy)),
-            'accuracy_by_category': accuracy_by_category,
-            'accuracy_by_topic': accuracy_by_topic,
+            'stats_by_category': stats_by_category,
+            'stats_by_topic': stats_by_topic,
             'weakest_topics': weakest_topics,
             'strongest_topics': strongest_topics,
             'current_streak_days': self.current_streak_days,
@@ -192,13 +196,13 @@ class UserStats:
         return {
             'total_questions_answered': self.total_questions_answered,
             'overall_accuracy': round(self.overall_accuracy, 1),
-            'accuracy_by_category': {
+            'stats_by_category': {
                 category: {
                     'total': stats.total,
                     'correct': stats.correct,
                     'accuracy': round(stats.accuracy, 1)
                 }
-                for category, stats in self.accuracy_by_category.items()
+                for category, stats in self.stats_by_category.items()
             },
             'weakest_topics': [
                 {
@@ -239,8 +243,8 @@ class UserStats:
             last_updated=timestamp,
             total_questions_answered=0,
             overall_accuracy=0.0,
-            accuracy_by_category={},
-            accuracy_by_topic={},
+            stats_by_category={},
+            stats_by_topic={},
             weakest_topics=[],
             strongest_topics=[],
             current_streak_days=0,

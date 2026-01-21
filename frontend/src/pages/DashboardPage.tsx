@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { apiService } from '../services/api';
-import type { UserStats } from '../types';
+import React, { useState, useEffect } from "react";
+import { apiService } from "../services/api";
+import type { UserStats } from "../types";
 
 export const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -14,9 +14,10 @@ export const DashboardPage: React.FC = () => {
     setLoading(true);
     try {
       const { stats: userStats } = await apiService.getUserStats();
+      debugger;
       setStats(userStats);
     } catch (error) {
-      console.error('Error loading stats:', error);
+      console.error("Error loading stats:", error);
     } finally {
       setLoading(false);
     }
@@ -25,7 +26,7 @@ export const DashboardPage: React.FC = () => {
   if (loading) {
     return (
       <div className="dashboard-page">
-        <div className="loading">Chargement des statistiques...</div>
+        <div className="loading">Chnpmargement des statistiques...</div>
       </div>
     );
   }
@@ -37,6 +38,8 @@ export const DashboardPage: React.FC = () => {
       </div>
     );
   }
+
+  const hasStatsByCategory = Object.keys(stats.stats_by_category).length > 0;
 
   return (
     <div className="dashboard-page">
@@ -52,8 +55,12 @@ export const DashboardPage: React.FC = () => {
           <div className="stat-label">Précision globale</div>
         </div>
         <div className="stat-card">
+          <div className="stat-value">TBA</div>
+          <div className="stat-label">Réponses correctes</div>
+        </div>
+        <div className="stat-card">
           <div className="stat-value">{stats.current_streak_days}</div>
-          <div className="stat-label">Série actuelle (jours)</div>
+          <div className="stat-label">Série actuelle</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">{stats.longest_streak_days}</div>
@@ -61,59 +68,92 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="category-stats-section">
-        <h2>Performances par catégorie</h2>
-        <div className="category-stats-grid">
-          {Object.entries(stats.category_stats).map(([category, categoryStats]) => (
-            <div key={category} className="category-stat-card">
-              <h3>{category}</h3>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${categoryStats.accuracy}%` }}
-                />
-              </div>
-              <div className="stat-details">
-                <span className="accuracy">{categoryStats.accuracy.toFixed(1)}%</span>
-                <span className="count">
-                  {categoryStats.correct_answers}/{categoryStats.questions_answered} correct
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="topic-stats-section">
-        <h2>Performances par thème</h2>
-        <div className="topic-stats-list">
-          {Object.entries(stats.topic_stats)
-            .sort((a, b) => a[1].accuracy - b[1].accuracy)
-            .map(([topicId, topicStats]) => (
-              <div key={topicId} className="topic-stat-row">
-                <div className="topic-info">
-                  <span className="topic-id">{topicId}</span>
-                  <div className="mini-progress-bar">
+      {hasStatsByCategory ? (
+        <div className="category-stats-section">
+          <h2>Performances par catégorie</h2>
+          <div className="category-stats-grid">
+            {Object.entries(stats.stats_by_category).map(
+              ([category, categoryStats]) => (
+                <div key={category} className="category-stat-card">
+                  <h3>{category}</h3>
+                  <div className="progress-bar">
                     <div
-                      className="mini-progress-fill"
-                      style={{ width: `${topicStats.accuracy}%` }}
+                      className="progress-fill"
+                      style={{ width: `${categoryStats.accuracy}%` }}
                     />
                   </div>
+                  <div className="stat-details">
+                    <span className="accuracy">
+                      {categoryStats.accuracy.toFixed(1)}%
+                    </span>
+                    <span className="count">
+                      {categoryStats.correct}/{categoryStats.total} correct
+                    </span>
+                  </div>
                 </div>
-                <div className="topic-metrics">
-                  <span className="accuracy">{topicStats.accuracy.toFixed(1)}%</span>
-                  <span className="count">
-                    {topicStats.correct_answers}/{topicStats.questions_answered}
-                  </span>
-                </div>
-              </div>
-            ))}
+              )
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
 
-      {stats.last_practice_date && (
+      {(stats.weakest_topics.length > 0 ||
+        stats.strongest_topics.length > 0) && (
+        <div className="topic-rankings-section">
+          {stats.weakest_topics.length > 0 && (
+            <div className="topic-ranking">
+              <h2>🎯 Thèmes à améliorer</h2>
+              <div className="topic-list">
+                {stats.weakest_topics.map((topic) => (
+                  <div key={topic.topic_id} className="topic-rank-item weak">
+                    <div className="topic-info">
+                      <span className="topic-name">{topic.topic_name}</span>
+                      <div className="mini-progress-bar">
+                        <div
+                          className="mini-progress-fill weak"
+                          style={{ width: `${topic.accuracy}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className="topic-accuracy">
+                      {topic.accuracy.toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {stats.strongest_topics.length > 0 && (
+            <div className="topic-ranking">
+              <h2>⭐ Vos meilleurs thèmes</h2>
+              <div className="topic-list">
+                {stats.strongest_topics.map((topic) => (
+                  <div key={topic.topic_id} className="topic-rank-item strong">
+                    <div className="topic-info">
+                      <span className="topic-name">{topic.topic_name}</span>
+                      <div className="mini-progress-bar">
+                        <div
+                          className="mini-progress-fill strong"
+                          style={{ width: `${topic.accuracy}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className="topic-accuracy">
+                      {topic.accuracy.toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {stats.last_activity_date && (
         <div className="last-practice">
-          Dernière pratique: {new Date(stats.last_practice_date).toLocaleDateString('fr-FR')}
+          Dernière activité:{" "}
+          {new Date(stats.last_activity_date).toLocaleDateString("fr-FR")}
         </div>
       )}
     </div>

@@ -45,28 +45,27 @@ export interface AnswerResponse {
 }
 
 export interface UserStats {
-  user_id: string;
   total_questions_answered: number;
-  total_correct: number;
   overall_accuracy: number;
   current_streak_days: number;
   longest_streak_days: number;
-  last_practice_date: string;
-  category_stats: Record<string, CategoryStats>;
-  topic_stats: Record<string, TopicStats>;
+  last_activity_date: string;
+  last_updated: string;
+  stats_by_category: Record<string, CategoryStats>;
+  weakest_topics: TopicRanking[];
+  strongest_topics: TopicRanking[];
 }
 
 export interface CategoryStats {
-  questions_answered: number;
-  correct_answers: number;
+  total: number;
+  correct: number;
   accuracy: number;
 }
 
-export interface TopicStats {
-  questions_answered: number;
-  correct_answers: number;
+export interface TopicRanking {
+  topic_id: string;
+  topic_name: string;
   accuracy: number;
-  last_attempted: string;
 }
 
 export interface UserProfile {
