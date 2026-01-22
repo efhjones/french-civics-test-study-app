@@ -5,8 +5,8 @@ Repository for Topics table operations.
 import os
 from typing import List, Optional
 from boto3.dynamodb.conditions import Key
-from .base_repository import BaseRepository
-from ..models.topic import Topic
+from repositories.base_repository import BaseRepository
+from models.topic import Topic
 
 
 class TopicRepository(BaseRepository):

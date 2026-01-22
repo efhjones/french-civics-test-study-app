@@ -11,13 +11,13 @@ Request body:
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict
-from ...repositories.question_repository import QuestionRepository
-from ...repositories.result_repository import ResultRepository
-from ...repositories.stats_repository import StatsRepository
-from ...models.result import UserQuestionResult
-from ...utils import (
+from repositories.question_repository import QuestionRepository
+from repositories.result_repository import ResultRepository
+from repositories.stats_repository import StatsRepository
+from models.result import UserQuestionResult
+from utils import (
     success_response,
     error_response,
     not_found_response,
@@ -72,8 +72,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # Check if answer is correct
         is_correct = (user_answer == question.correct_answer)
 
-        # Create timestamp
-        timestamp = datetime.utcnow().isoformat() + 'Z'
+        # Create timestamp (replace +00:00 with Z for consistency)
+        timestamp = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
 
         # Create result record
         result = UserQuestionResult(
@@ -112,7 +112,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             timestamp=timestamp
         )
 
-        logger.info(f"Stats updated for user {user_id}")
+        # Move question from unanswered to answered pool
+        stats_repo.move_question_to_answered(user_id, question_id)
+
+        logger.info(f"Stats updated for user {user_id} and question moved to answered pool")
 
         # Prepare response
         response_data = {

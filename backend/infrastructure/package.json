@@ -12,7 +12,11 @@
     "deploy": "cdk deploy --all",
     "destroy": "cdk destroy --all",
     "synth": "cdk synth",
-    "diff": "cdk diff"
+    "diff": "cdk diff",
+    "package-lambda": "cd ../src && zip -r /tmp/lambda-code.zip . -x '*.pyc' -x '__pycache__/*' -x '*/__pycache__/*' -x '*/*/__pycache__/*' && echo '✅ Lambda code packaged to /tmp/lambda-code.zip'",
+    "deploy-lambda": "npm run package-lambda && for func in french-civics-get-user-profile french-civics-get-user-stats french-civics-get-user-history french-civics-list-topics french-civics-get-topic french-civics-get-next-question french-civics-submit-answer french-civics-get-question; do echo \"Updating $func...\" && aws lambda update-function-code --function-name $func --zip-file fileb:///tmp/lambda-code.zip --query 'FunctionName' --output text; done && echo '✅ All Lambda functions deployed'",
+    "deploy-lambda-quick": "for func in french-civics-get-user-profile french-civics-get-user-stats french-civics-get-user-history french-civics-list-topics french-civics-get-topic french-civics-get-next-question french-civics-submit-answer french-civics-get-question; do echo \"Updating $func...\" && aws lambda update-function-code --function-name $func --zip-file fileb:///tmp/lambda-code.zip --query 'FunctionName' --output text; done && echo '✅ All Lambda functions deployed'",
+    "update-lambda": "npm run deploy-lambda"
   },
   "keywords": [
     "aws",

@@ -117,18 +117,18 @@ class BaseRepository:
         filter_expression: Optional[Any] = None
     ) -> List[Dict[str, Any]]:
         """
-        Query items.
+        Query items with automatic pagination handling.
 
         Args:
             key_condition_expression: Key condition expression
             expression_attribute_values: Values for the expression
             index_name: Optional GSI name
             scan_index_forward: Sort order (True=ascending, False=descending)
-            limit: Optional result limit
+            limit: Optional result limit (total items to return across all pages)
             filter_expression: Optional filter expression
 
         Returns:
-            List of items
+            List of items (handles pagination automatically)
         """
         try:
             query_kwargs = {
@@ -140,14 +140,39 @@ class BaseRepository:
             if index_name:
                 query_kwargs['IndexName'] = index_name
 
-            if limit:
-                query_kwargs['Limit'] = limit
-
             if filter_expression:
                 query_kwargs['FilterExpression'] = filter_expression
 
-            response = self.table.query(**query_kwargs)
-            return response.get('Items', [])
+            # Handle pagination
+            items = []
+            last_evaluated_key = None
+
+            while True:
+                # Add pagination key if we're continuing from a previous page
+                if last_evaluated_key:
+                    query_kwargs['ExclusiveStartKey'] = last_evaluated_key
+
+                # If limit is set, only request remaining items
+                if limit:
+                    remaining = limit - len(items)
+                    if remaining <= 0:
+                        break
+                    query_kwargs['Limit'] = remaining
+
+                response = self.table.query(**query_kwargs)
+                page_items = response.get('Items', [])
+                items.extend(page_items)
+
+                # Check if there are more pages
+                last_evaluated_key = response.get('LastEvaluatedKey')
+                if not last_evaluated_key:
+                    break
+
+                # If we've hit our limit, stop
+                if limit and len(items) >= limit:
+                    break
+
+            return items
         except ClientError as e:
             raise Exception(f"Error querying {self.table_name}: {e}")
 

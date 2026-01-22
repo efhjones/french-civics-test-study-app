@@ -1,19 +1,17 @@
 """
-Lambda handler for getting the next question using adaptive learning.
+Lambda handler for getting the next question from user's question pool.
 
 GET /questions/next
 
 Query parameters:
-  - debug: Set to 'true' to include debug information about topic selection
+  - debug: Set to 'true' to include debug information
 """
 
 import json
 from typing import Any, Dict
-from ...repositories.question_repository import QuestionRepository
-from ...repositories.result_repository import ResultRepository
-from ...repositories.topic_repository import TopicRepository
-from ...services.adaptive_learning import AdaptiveLearningService
-from ...utils import (
+from repositories.question_repository import QuestionRepository, Question
+from repositories.stats_repository import StatsRepository
+from utils import (
     success_response,
     error_response,
     internal_server_error_response,
@@ -25,21 +23,19 @@ from ...utils import (
 
 logger = get_logger(__name__)
 question_repo = QuestionRepository()
-result_repo = ResultRepository()
-topic_repo = TopicRepository()
-adaptive_service = AdaptiveLearningService()
+stats_repo = StatsRepository()
 
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
-    Get the next question using adaptive learning algorithm.
+    Get the next question from user's question pool.
 
-    The algorithm:
-    1. Analyzes user performance across all topics
-    2. Classifies topics as weak (<60%), medium (60-80%), or strong (>80%)
-    3. Weights recent performance (last 7 days) more heavily
-    4. Selects a topic using 60/30/10 distribution (weak/medium/strong)
-    5. Selects a question from that topic (avoiding recently answered ones)
+    The logic:
+    1. Get user's stats (contains unanswered_questions pool)
+    2. If no stats exist, initialize with all questions
+    3. If unanswered_questions is empty, reset pool (move answered back)
+    4. Pick first question from unanswered_questions
+    5. Return question details
 
     Args:
         event: API Gateway Lambda proxy event
@@ -57,42 +53,52 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         query_params = event.get('queryStringParameters') or {}
         debug_mode = query_params.get('debug', '').lower() == 'true'
 
-        # Get all user results for performance analysis
-        logger.info(f"Fetching all results for user {user_id}")
-        all_results = result_repo.get_user_history(user_id, limit=1000)
+        # Get user stats (contains question pools)
+        logger.info(f"Fetching stats for user {user_id}")
+        stats = stats_repo.get_by_user_id(user_id)
 
-        # Get recent results (last 7 days) for filtering out recently answered questions
-        recent_results = result_repo.get_recent_results(user_id, days=7)
+        # Initialize if doesn't exist
+        if not stats:
+            logger.info(f"No stats found for user {user_id}, initializing...")
+            stats = stats_repo.initialize_for_user(user_id)
+            logger.info(f"Initialized stats with {len(stats.unanswered_questions)} questions")
 
-        # Get all available questions
-        logger.info("Fetching all available questions")
-        all_questions = question_repo.list_all()
+        # Check if we need to reset (all questions answered)
+        if not stats.unanswered_questions:
+            logger.info(f"User {user_id} completed all questions, resetting pool...")
+            import random
+            from datetime import datetime
 
-        if not all_questions:
-            return error_response(
-                message="No questions available in the database. Please seed questions first.",
-                status_code=503
-            )
+            def myFunc(question: Question):
+                return question.question_id
 
-        # Get list of topics that have questions
-        available_topics = list(set(q.topic_id for q in all_questions))
-        logger.info(f"Found {len(all_questions)} questions across {len(available_topics)} topics")
+            # Move all answered back to unanswered
+            stats.unanswered_questions = list(map(myFunc, question_repo.list_all()))
+            stats.answered_questions = []
 
-        # Use adaptive learning service to select next question
-        selected_question, debug_info = adaptive_service.get_next_question(
-            all_results=all_results,
-            recent_results=recent_results,
-            all_questions=all_questions,
-            available_topics=available_topics
-        )
+            # Shuffle for variety
+            random.shuffle(stats.unanswered_questions)
+
+            # Update timestamp
+            stats.last_updated = datetime.utcnow().isoformat() + 'Z'
+
+            # Save the reset
+            stats_repo.create_or_update(stats)
+            logger.info(f"Reset complete, {len(stats.unanswered_questions)} questions available")
+
+        # Pick next question from unanswered pool (first one)
+        next_question_id = stats.unanswered_questions[0]
+        logger.info(f"Selected question {next_question_id} from pool of {len(stats.unanswered_questions)} unanswered")
+
+        # Fetch full question details
+        selected_question = question_repo.get_by_id(next_question_id)
 
         if not selected_question:
+            logger.error(f"Question {next_question_id} not found in database")
             return error_response(
-                message="Unable to select a question. This is unusual.",
+                message="Question not found in database",
                 status_code=500
             )
-
-        logger.info(f"Selected question {selected_question.question_id} from topic {selected_question.topic_id}")
 
         # Convert to API response format (hides correct answer)
         question_data = selected_question.to_api_response(include_answer=False)
@@ -102,11 +108,15 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
         # Include debug info if requested
         if debug_mode:
-            response_data['debug'] = debug_info
+            response_data['debug'] = {
+                'unanswered_remaining': len(stats.unanswered_questions),
+                'answered_count': len(stats.answered_questions),
+                'total_questions': len(stats.unanswered_questions) + len(stats.answered_questions)
+            }
 
         return success_response(
             data=response_data,
-            message="Next question selected using adaptive learning"
+            message="Next question selected from pool"
         )
 
     except ValueError as e:

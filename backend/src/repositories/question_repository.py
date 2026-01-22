@@ -5,8 +5,8 @@ Repository for Questions table operations.
 import os
 from typing import List, Optional
 from boto3.dynamodb.conditions import Key
-from .base_repository import BaseRepository
-from ..models.question import Question
+from repositories.base_repository import BaseRepository
+from models.question import Question
 
 
 class QuestionRepository(BaseRepository):
@@ -39,6 +39,16 @@ class QuestionRepository(BaseRepository):
             question: Question instance to create
         """
         self.put_item(question.to_dynamo())
+
+    def list_all(self) -> List[Question]:
+        """
+        List all questions.
+
+        Returns:
+            List of Question instances
+        """
+        items = self.scan()
+        return [Question.from_dynamo(item) for item in items]
 
     def list_by_topic(
         self,

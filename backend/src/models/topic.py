@@ -42,7 +42,7 @@ class Topic:
         """
         source_ref_data = item['source_reference']
         source_ref = SourceReference(
-            pages=source_ref_data['pages'],
+            pages=[int(p) for p in source_ref_data['pages']],
             sections=source_ref_data['sections']
         )
 
@@ -52,7 +52,7 @@ class Topic:
             name=item['name'],
             description=item['description'],
             source_reference=source_ref,
-            display_order=item['display_order'],
+            display_order=int(item['display_order']),
             created_at=item['created_at']
         )
 

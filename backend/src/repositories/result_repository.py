@@ -3,11 +3,11 @@ Repository for UserQuestionResults table operations.
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from boto3.dynamodb.conditions import Key
-from .base_repository import BaseRepository
-from ..models.result import UserQuestionResult
+from repositories.base_repository import BaseRepository
+from models.result import UserQuestionResult
 
 
 class ResultRepository(BaseRepository):
@@ -68,11 +68,13 @@ class ResultRepository(BaseRepository):
         Returns:
             List of UserQuestionResult instances
         """
-        since_date = datetime.utcnow() - timedelta(days=days)
-        since_timestamp = since_date.isoformat() + 'Z'
+        since_date = datetime.now(timezone.utc) - timedelta(days=days)
+        since_timestamp = since_date.isoformat().replace('+00:00', 'Z')
+        # Create composite key for querying (timestamp is first part of result_id)
+        since_result_id = since_timestamp + '#'
 
         items = self.query(
-            key_condition_expression=Key('user_id').eq(user_id) & Key('result_id').gte(since_timestamp),
+            key_condition_expression=Key('user_id').eq(user_id) & Key('result_id').gte(since_result_id),
             expression_attribute_values={},
             scan_index_forward=False  # Newest first
         )

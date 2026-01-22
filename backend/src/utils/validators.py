@@ -5,7 +5,7 @@ Input validation utilities.
 import re
 from typing import Any, Dict, List, Optional
 from datetime import datetime
-from ..shared.constants import ValidationLimits, QuestionType
+from shared.constants import ValidationLimits, QuestionType
 
 
 def validate_question_id(question_id: str) -> bool:

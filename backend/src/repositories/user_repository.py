@@ -5,8 +5,8 @@ Repository for Users table operations.
 import os
 from datetime import datetime
 from typing import Optional
-from .base_repository import BaseRepository
-from ..models.user import User
+from repositories.base_repository import BaseRepository
+from models.user import User
 
 
 class UserRepository(BaseRepository):
@@ -72,10 +72,12 @@ class UserRepository(BaseRepository):
         """
         update_parts = []
         attribute_values = {}
+        attribute_names = {}
 
         if name is not None:
-            update_parts.append('name = :name')
+            update_parts.append('#name = :name')
             attribute_values[':name'] = name
+            attribute_names['#name'] = 'name'
 
         if not update_parts:
             # No updates to make
@@ -86,7 +88,8 @@ class UserRepository(BaseRepository):
         updated_item = self.update_item(
             key={'user_id': user_id},
             update_expression=update_expression,
-            expression_attribute_values=attribute_values
+            expression_attribute_values=attribute_values,
+            expression_attribute_names=attribute_names if attribute_names else None
         )
         return User.from_dynamo(updated_item)
 

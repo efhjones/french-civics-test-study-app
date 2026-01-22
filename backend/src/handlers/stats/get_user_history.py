@@ -11,8 +11,8 @@ Query parameters:
 
 import json
 from typing import Any, Dict
-from ...repositories.result_repository import ResultRepository
-from ...utils import (
+from repositories.result_repository import ResultRepository
+from utils import (
     success_response,
     error_response,
     validation_error_response,

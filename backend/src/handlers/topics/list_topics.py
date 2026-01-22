@@ -8,8 +8,8 @@ Optional query parameters:
 
 import json
 from typing import Any, Dict
-from ...repositories.topic_repository import TopicRepository
-from ...utils import (
+from repositories.topic_repository import TopicRepository
+from utils import (
     success_response,
     error_response,
     internal_server_error_response,

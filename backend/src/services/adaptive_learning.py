@@ -9,11 +9,11 @@ This module implements the core adaptive learning logic:
 """
 
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional, Tuple
-from ..models.question import Question
-from ..models.result import UserQuestionResult
-from ..shared.constants import AdaptiveLearningWeights
+from models.question import Question
+from models.result import UserQuestionResult
+from shared.constants import AdaptiveLearningWeights
 
 
 class TopicPerformance:
@@ -91,7 +91,7 @@ class AdaptiveLearningService:
         topic_performance: Dict[str, TopicPerformance] = {}
 
         # Calculate cutoff for "recent" (last 7 days)
-        cutoff_date = datetime.utcnow() - timedelta(days=self.recent_days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=self.recent_days)
 
         # Process all results
         for result in results:
@@ -112,7 +112,15 @@ class AdaptiveLearningService:
                 perf.correct_attempts += 1
 
             # Check if this is a recent result
-            result_date = datetime.fromisoformat(result.answered_at.replace('Z', '+00:00'))
+            # Handle both correct format (Z suffix) and malformed old data (+00:00+00:00)
+            try:
+                # First, clean up any malformed timestamps from old data
+                clean_timestamp = result.answered_at.replace('+00:00+00:00', '+00:00').replace('Z', '+00:00')
+                result_date = datetime.fromisoformat(clean_timestamp)
+            except (ValueError, AttributeError):
+                # If parsing fails, skip this result
+                continue
+
             if result_date >= cutoff_date:
                 perf.recent_attempts += 1
                 if result.correct:
@@ -167,6 +175,11 @@ class AdaptiveLearningService:
             else:
                 strong_topics.append(topic_id)
 
+        # Shuffle each list to ensure randomness when weights are equal
+        random.shuffle(weak_topics)
+        random.shuffle(medium_topics)
+        random.shuffle(strong_topics)
+
         # If no topics in a category, redistribute weight
         # For example, if no medium topics, give that 30% to weak topics
 
@@ -191,6 +204,9 @@ class AdaptiveLearningService:
         if not pool:
             return None
 
+        # Shuffle the pool to ensure randomness
+        random.shuffle(pool)
+
         # Weighted random selection
         topics, weights = zip(*pool)
         selected_topic = random.choices(topics, weights=weights, k=1)[0]
@@ -200,7 +216,7 @@ class AdaptiveLearningService:
     def select_question(
         self,
         questions: List[Question],
-        recent_results: List[UserQuestionResult],
+        all_results: List[UserQuestionResult],
         topic_id: Optional[str] = None
     ) -> Optional[Question]:
         """
@@ -208,12 +224,13 @@ class AdaptiveLearningService:
 
         Prioritizes:
         1. Questions from the selected topic (if specified)
-        2. Questions not answered recently
-        3. Random selection within those constraints
+        2. Questions never answered before
+        3. Questions answered longest ago
+        4. Random selection within those constraints
 
         Args:
             questions: Available questions
-            recent_results: Recent user results (for filtering)
+            all_results: All user results (for determining what's been answered)
             topic_id: Optional topic to filter by
 
         Returns:
@@ -229,18 +246,52 @@ class AdaptiveLearningService:
         if not questions:
             return None
 
-        # Get recently answered question IDs (last 7 days)
-        recent_question_ids = set(r.question_id for r in recent_results)
+        # Build a map of question_id -> most recent answer timestamp
+        answered_map = {}
+        for result in all_results:
+            if result.question_id not in answered_map:
+                answered_map[result.question_id] = result.answered_at
+            else:
+                # Keep the most recent timestamp
+                if result.answered_at > answered_map[result.question_id]:
+                    answered_map[result.question_id] = result.answered_at
 
-        # Prefer questions not recently answered
-        unanswered_questions = [q for q in questions if q.question_id not in recent_question_ids]
+        # Debug logging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Built answered_map with {len(answered_map)} unique questions from {len(all_results)} results")
 
-        if unanswered_questions:
-            # Select randomly from unanswered
-            return random.choice(unanswered_questions)
-        else:
-            # All questions have been answered recently, select randomly from all
-            return random.choice(questions)
+        # Separate into never-answered and previously-answered
+        never_answered = []
+        previously_answered = []
+
+        for question in questions:
+            if question.question_id not in answered_map:
+                never_answered.append(question)
+            else:
+                previously_answered.append((question, answered_map[question.question_id]))
+
+        # Priority 1: Never answered questions (shuffle for true randomness)
+        if never_answered:
+            logger.info(f"Found {len(never_answered)} never-answered questions out of {len(questions)} total")
+            random.shuffle(never_answered)
+            selected = never_answered[0]
+            logger.info(f"Selected never-answered question: {selected.question_id}")
+            return selected
+
+        # Priority 2: Questions answered longest ago
+        if previously_answered:
+            logger.info(f"All {len(previously_answered)} questions have been answered - selecting oldest")
+            # Sort by timestamp (oldest first)
+            previously_answered.sort(key=lambda x: x[1])
+            # Return the question answered longest ago
+            selected = previously_answered[0][0]
+            oldest_timestamp = previously_answered[0][1]
+            logger.info(f"Selected oldest answered question: {selected.question_id}, last answered: {oldest_timestamp}")
+            return selected
+
+        # Should never reach here, but just in case
+        return random.choice(questions) if questions else None
 
     def get_next_question(
         self,
@@ -253,8 +304,8 @@ class AdaptiveLearningService:
         Main entry point for adaptive question selection.
 
         Args:
-            all_results: All user results (for performance analysis)
-            recent_results: Recent results (last 7 days, for filtering)
+            all_results: All user results (for performance analysis and question filtering)
+            recent_results: Recent results (last 7 days, for performance weighting)
             all_questions: All available questions
             available_topics: List of topic IDs that have questions
 
@@ -281,10 +332,10 @@ class AdaptiveLearningService:
         if not selected_topic_id:
             return None, debug_info
 
-        # Select question from that topic
+        # Select question from that topic (using all_results to avoid repeats)
         question = self.select_question(
             questions=all_questions,
-            recent_results=recent_results,
+            all_results=all_results,
             topic_id=selected_topic_id
         )
         debug_info['selected_question_id'] = question.question_id if question else None

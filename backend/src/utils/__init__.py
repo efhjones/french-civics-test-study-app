@@ -2,14 +2,14 @@
 Utility functions for the French Civics Test application.
 """
 
-from .auth import (
+from utils.auth import (
     extract_user_id_from_event,
     extract_user_email_from_event,
     extract_cognito_username_from_event,
     get_all_claims,
 )
 
-from .responses import (
+from utils.responses import (
     success_response,
     error_response,
     not_found_response,
@@ -18,7 +18,7 @@ from .responses import (
     internal_server_error_response,
 )
 
-from .validators import (
+from utils.validators import (
     validate_question_id,
     validate_topic_id,
     validate_response_time,
@@ -27,7 +27,7 @@ from .validators import (
     sanitize_string,
 )
 
-from .logging import (
+from utils.logging import (
     get_logger,
     log_api_request,
     log_api_response,

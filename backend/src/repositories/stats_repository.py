@@ -5,8 +5,8 @@ Repository for UserStats table operations.
 import os
 from datetime import datetime
 from typing import Optional
-from .base_repository import BaseRepository
-from ..models.stats import UserStats
+from repositories.base_repository import BaseRepository
+from models.stats import UserStats
 
 
 class StatsRepository(BaseRepository):
@@ -42,7 +42,7 @@ class StatsRepository(BaseRepository):
 
     def initialize_for_user(self, user_id: str) -> UserStats:
         """
-        Initialize empty stats for a new user.
+        Initialize empty stats for a new user with question pool.
 
         Args:
             user_id: User's Cognito sub
@@ -50,8 +50,22 @@ class StatsRepository(BaseRepository):
         Returns:
             Initialized UserStats instance
         """
+        import random
+        from repositories.question_repository import QuestionRepository
+
         timestamp = datetime.utcnow().isoformat() + 'Z'
         stats = UserStats.create_empty(user_id, timestamp)
+
+        # Load all question IDs and shuffle them for variety
+        question_repo = QuestionRepository()
+        all_questions = question_repo.scan_all()
+        all_question_ids = [q.question_id for q in all_questions]
+        random.shuffle(all_question_ids)
+
+        # Initialize question pools
+        stats.unanswered_questions = all_question_ids
+        stats.answered_questions = []
+
         self.create_or_update(stats)
         return stats
 
@@ -71,25 +85,60 @@ class StatsRepository(BaseRepository):
             is_correct: Whether answer was correct
             timestamp: Current timestamp
         """
-        # Build update expression
-        update_expression = f"""
-            ADD total_questions_answered :inc,
-                accuracy_by_category.#cat.total :inc,
-                accuracy_by_category.#cat.correct :correct_inc
-            SET accuracy_by_category.#cat.last_answered = :timestamp,
-                last_updated = :timestamp
-        """
+        from decimal import Decimal
+        from botocore.exceptions import ClientError
 
-        self.update_item(
-            key={'user_id': user_id},
-            update_expression=update_expression,
-            expression_attribute_names={'#cat': category},
-            expression_attribute_values={
-                ':inc': 1,
-                ':correct_inc': 1 if is_correct else 0,
-                ':timestamp': timestamp
-            }
-        )
+        try:
+            # Try to increment (assumes category exists)
+            update_expression = """
+                ADD total_questions_answered :inc
+                SET stats_by_category.#cat.#total = stats_by_category.#cat.#total + :inc,
+                    stats_by_category.#cat.#correct = stats_by_category.#cat.#correct + :correct_inc,
+                    stats_by_category.#cat.last_answered = :timestamp,
+                    last_updated = :timestamp
+            """
+
+            self.update_item(
+                key={'user_id': user_id},
+                update_expression=update_expression,
+                expression_attribute_names={
+                    '#cat': category,
+                    '#total': 'total',
+                    '#correct': 'correct'
+                },
+                expression_attribute_values={
+                    ':inc': 1,
+                    ':correct_inc': 1 if is_correct else 0,
+                    ':timestamp': timestamp
+                }
+            )
+        except Exception as e:
+            if 'invalid for update' in str(e).lower() or 'document path' in str(e).lower():
+                # Category doesn't exist, create it with initial values
+                update_expression = """
+                    ADD total_questions_answered :inc
+                    SET stats_by_category.#cat = :new_category,
+                        last_updated = :timestamp
+                """
+
+                self.update_item(
+                    key={'user_id': user_id},
+                    update_expression=update_expression,
+                    expression_attribute_names={
+                        '#cat': category
+                    },
+                    expression_attribute_values={
+                        ':inc': 1,
+                        ':new_category': {
+                            'total': 1,
+                            'correct': 1 if is_correct else 0,
+                            'last_answered': timestamp
+                        },
+                        ':timestamp': timestamp
+                    }
+                )
+            else:
+                raise
 
     def increment_topic_stats(
         self,
@@ -107,23 +156,58 @@ class StatsRepository(BaseRepository):
             is_correct: Whether answer was correct
             timestamp: Current timestamp
         """
-        update_expression = f"""
-            ADD accuracy_by_topic.#topic.total :inc,
-                accuracy_by_topic.#topic.correct :correct_inc
-            SET accuracy_by_topic.#topic.last_answered = :timestamp,
-                last_updated = :timestamp
-        """
+        from decimal import Decimal
+        from botocore.exceptions import ClientError
 
-        self.update_item(
-            key={'user_id': user_id},
-            update_expression=update_expression,
-            expression_attribute_names={'#topic': topic_id},
-            expression_attribute_values={
-                ':inc': 1,
-                ':correct_inc': 1 if is_correct else 0,
-                ':timestamp': timestamp
-            }
-        )
+        try:
+            # Try to increment (assumes topic exists)
+            update_expression = """
+                SET stats_by_topic.#topic.#total = stats_by_topic.#topic.#total + :inc,
+                    stats_by_topic.#topic.#correct = stats_by_topic.#topic.#correct + :correct_inc,
+                    stats_by_topic.#topic.last_answered = :timestamp,
+                    last_updated = :timestamp
+            """
+
+            self.update_item(
+                key={'user_id': user_id},
+                update_expression=update_expression,
+                expression_attribute_names={
+                    '#topic': topic_id,
+                    '#total': 'total',
+                    '#correct': 'correct'
+                },
+                expression_attribute_values={
+                    ':inc': 1,
+                    ':correct_inc': 1 if is_correct else 0,
+                    ':timestamp': timestamp
+                }
+            )
+        except Exception as e:
+            if 'invalid for update' in str(e).lower() or 'document path' in str(e).lower():
+                # Topic doesn't exist, create it with initial values
+                update_expression = """
+                    SET stats_by_topic.#topic = :new_topic,
+                        last_updated = :timestamp
+                """
+
+                self.update_item(
+                    key={'user_id': user_id},
+                    update_expression=update_expression,
+                    expression_attribute_names={
+                        '#topic': topic_id
+                    },
+                    expression_attribute_values={
+                        ':new_topic': {
+                            'total': 1,
+                            'correct': 1 if is_correct else 0,
+                            'recent_accuracy': Decimal('0'),
+                            'last_answered': timestamp
+                        },
+                        ':timestamp': timestamp
+                    }
+                )
+            else:
+                raise
 
     def update_streak(
         self,
@@ -154,6 +238,43 @@ class StatsRepository(BaseRepository):
                 ':date': last_activity_date
             }
         )
+
+    def move_question_to_answered(self, user_id: str, question_id: str) -> None:
+        """
+        Move a question from unanswered to answered pool.
+        If unanswered pool becomes empty, reset by moving all answered back to unanswered.
+
+        Args:
+            user_id: User's Cognito sub
+            question_id: Question ID to move
+        """
+        import random
+
+        # Get current stats
+        stats = self.get_by_user_id(user_id)
+        if not stats:
+            # Initialize if doesn't exist
+            stats = self.initialize_for_user(user_id)
+
+        # Move question from unanswered to answered
+        if question_id in stats.unanswered_questions:
+            stats.unanswered_questions.remove(question_id)
+            stats.answered_questions.append(question_id)
+
+        # Check if we need to reset (all questions answered)
+        if not stats.unanswered_questions:
+            # Move all answered back to unanswered
+            stats.unanswered_questions = stats.answered_questions
+            stats.answered_questions = []
+
+            # Shuffle for variety
+            random.shuffle(stats.unanswered_questions)
+
+        # Update timestamp
+        stats.last_updated = datetime.utcnow().isoformat() + 'Z'
+
+        # Save updated pools
+        self.create_or_update(stats)
 
     def stats_exist(self, user_id: str) -> bool:
         """

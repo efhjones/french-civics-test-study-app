@@ -6,8 +6,8 @@ GET /questions/{questionId}
 
 import json
 from typing import Any, Dict
-from ...repositories.question_repository import QuestionRepository
-from ...utils import (
+from repositories.question_repository import QuestionRepository
+from utils import (
     success_response,
     error_response,
     not_found_response,
