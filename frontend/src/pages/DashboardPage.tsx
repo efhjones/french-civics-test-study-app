@@ -26,7 +26,7 @@ export const DashboardPage: React.FC = () => {
   if (loading) {
     return (
       <div className="dashboard-page">
-        <div className="loading">Chnpmargement des statistiques...</div>
+        <div className="loading">Chargement des statistiques...</div>
       </div>
     );
   }

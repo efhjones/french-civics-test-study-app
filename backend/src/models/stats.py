@@ -62,6 +62,10 @@ class UserStats:
     longest_streak_days: int
     last_activity_date: str
 
+    # Question pool management
+    unanswered_questions: list[str]  # Question IDs not yet answered this cycle
+    answered_questions: list[str]    # Question IDs answered this cycle
+
     @classmethod
     def from_dynamo(cls, item: dict) -> 'UserStats':
         """
@@ -123,7 +127,9 @@ class UserStats:
             strongest_topics=strongest_topics,
             current_streak_days=int(item.get('current_streak_days', 0)),
             longest_streak_days=int(item.get('longest_streak_days', 0)),
-            last_activity_date=item.get('last_activity_date', '')
+            last_activity_date=item.get('last_activity_date', ''),
+            unanswered_questions=item.get('unanswered_questions', []),
+            answered_questions=item.get('answered_questions', [])
         )
 
     def to_dynamo(self) -> dict:
@@ -183,7 +189,9 @@ class UserStats:
             'strongest_topics': strongest_topics,
             'current_streak_days': self.current_streak_days,
             'longest_streak_days': self.longest_streak_days,
-            'last_activity_date': self.last_activity_date
+            'last_activity_date': self.last_activity_date,
+            'unanswered_questions': self.unanswered_questions,
+            'answered_questions': self.answered_questions
         }
 
     def to_api_response(self) -> dict:
@@ -249,5 +257,7 @@ class UserStats:
             strongest_topics=[],
             current_streak_days=0,
             longest_streak_days=0,
-            last_activity_date=''
+            last_activity_date='',
+            unanswered_questions=[],
+            answered_questions=[]
         )

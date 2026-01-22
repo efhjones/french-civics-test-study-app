@@ -112,7 +112,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             timestamp=timestamp
         )
 
-        logger.info(f"Stats updated for user {user_id}")
+        # Move question from unanswered to answered pool
+        stats_repo.move_question_to_answered(user_id, question_id)
+
+        logger.info(f"Stats updated for user {user_id} and question moved to answered pool")
 
         # Prepare response
         response_data = {
